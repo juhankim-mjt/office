@@ -1,1 +1,102 @@
-{} # 빈 JSON 파일 생성
+{
+  "winner01": {
+    "id": "dkwqodk0120",
+    "name": "김주한",
+    "social": "apple"
+  },
+  "winner02": {
+    "id": "3819358254",
+    "name": "송우진",
+    "social": "kakao"
+  },
+  "winner03": {
+    "id": "12dwllkko",
+    "name": "홍길동",
+    "social": "kakao"
+  },
+  "winner04": {
+    "id": "001fdjfiae",
+    "name": "성땡땡",
+    "social": "kakao"
+  },
+  "winner05": {
+    "id": "user005",
+    "name": "이서준",
+    "social": "naver"
+  },
+  "winner06": {
+    "id": "user006",
+    "name": "박민지",
+    "social": "google"
+  },
+  "winner07": {
+    "id": "user007",
+    "name": "최하늘",
+    "social": "kakao"
+  },
+  "winner08": {
+    "id": "user008",
+    "name": "정호영",
+    "social": "apple"
+  },
+  "winner09": {
+    "id": "user009",
+    "name": "오세진",
+    "social": "naver"
+  },
+  "winner10": {
+    "id": "user010",
+    "name": "한지우",
+    "social": "google"
+  },
+  "winner11": {
+    "id": "user011",
+    "name": "강다윤",
+    "social": "kakao"
+  },
+  "winner12": {
+    "id": "user012",
+    "name": "윤서현",
+    "social": "apple"
+  },
+  "winner13": {
+    "id": "user013",
+    "name": "배준호",
+    "social": "naver"
+  },
+  "winner14": {
+    "id": "user014",
+    "name": "j가은",
+    "social": "google"
+  },
+  "winner15": {
+    "id": "user015",
+    "name": "문현우",
+    "social": "kakao"
+  },
+  "winner16": {
+    "id": "user016",
+    "name": "조은채",
+    "social": "apple"
+  },
+  "winner17": {
+    "id": "user017",
+    "name": "장태민",
+    "social": "naver"
+  },
+  "winner18": {
+    "id": "user018",
+    "name": "임다혜",
+    "social": "google"
+  },
+  "winner19": {
+    "id": "user019",
+    "name": "e우빈",
+    "social": "kakao"
+  },
+  "winner20": {
+    "id": "user020",
+    "name": "권지민",
+    "social": "apple"
+  }
+}
