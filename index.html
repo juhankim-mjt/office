@@ -17,7 +17,7 @@
   #result{margin-top:18px;padding:16px;border-radius:10px;border:1px dashed #dfe6ff;background:#fbfbff}
   .result-title{font-weight:700;font-size:18px;margin-bottom:8px}
   .result-body{white-space:pre-wrap;color:#333}
-  .actions{margin-top:12px;display:flex;gap:8px}
+  .actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
   .action-btn{padding:8px 12px;border-radius:8px;border:0;background:#3b82f6;color:#fff;cursor:pointer}
   .action-btn.secondary{background:#6b7280}
   canvas{display:block;margin-top:12px;border-radius:8px;border:1px solid #eee}
@@ -27,7 +27,7 @@
 <body>
 <div class="container">
   <h1>MBTI로 보는 나랑 어울리는 강아지 테스트 🐶</h1>
-  <p class="lead">아래 질문에 8개 모두 답하면 당신의 MBTI를 추정하고, 그 MBTI와 어울리는 강아지 견종과 설명을 보여드립니다.</p>
+  <p class="lead">아래 질문에 모두 답하면 당신의 MBTI를 추정하고, 그 MBTI와 어울리는 강아지 견종과 설명을 보여드립니다.</p>
 
   <div id="quiz"></div>
 
@@ -40,204 +40,178 @@
     <div class="result-title" id="result-title"></div>
     <div class="result-body" id="result-body"></div>
     <div class="actions">
-      <button id="download" class="action-btn">카드 PNG로 저장</button>
+      <button id="shareKakao" class="action-btn">카카오톡 공유하기</button>
       <button id="copyText" class="action-btn secondary">텍스트 복사</button>
     </div>
     <canvas id="cardCanvas" width="820" height="420" style="display:none"></canvas>
   </div>
 
-  <footer>원한다면 이 기반으로 이미지(견종 사진) 불러오기, SNS 공유 버튼, 경품 응모 폼 추가해 드려요.</footer>
+  <footer>👉 강아지 PNG 이미지는 DOG_IMAGES 매핑 테이블에 직접 교체하세요.</footer>
 </div>
 
+<!-- 카카오 SDK -->
+<script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
 <script>
-/* --- 데이터 (위 JSON을 그대로 내장) --- */
+  Kakao.init("여기에_본인_Javascript_앱키"); // ⚠️ 발급받은 앱키 입력
+</script>
+
+<script>
+/* MBTI → 견종 매핑 */
 const DATA = {
   questions: [
-    {id:1,text:"파티에 가면 주로 무엇을 하나요?", a:{text:"사람들과 어울려 먼저 말 거는 편 (E)", score:{E:1}}, b:{text:"조용히 관찰하거나 친한 사람만 만나는 편 (I)", score:{I:1}}},
-    {id:2,text:"결정할 때 무엇에 더 의지하나요?", a:{text:"현실적 사실과 경험 (S)", score:{S:1}}, b:{text:"직관과 가능성 (N)", score:{N:1}}},
-    {id:3,text:"갈등 상황에서 나는?", a:{text:"논리(원인·해결) 중심으로 접근 (T)", score:{T:1}}, b:{text:"감정과 관계를 고려해 결론 (F)", score:{F:1}}},
-    {id:4,text:"계획 세울 때 나는?", a:{text:"미리 계획해 두는 편 (J)", score:{J:1}}, b:{text:"즉흥적으로 유연하게 가는 편 (P)", score:{P:1}}},
-    {id:5,text:"휴일에 당신이라면?", a:{text:"여럿이랑 활동적으로 보내기 (E)", score:{E:1}}, b:{text:"집에서 혼자/적은 사람과 쉬기 (I)", score:{I:1}}},
-    {id:6,text:"새로운 것 배울 때 선호는?", a:{text:"검증된 방법과 실습 (S)", score:{S:1}}, b:{text:"이론·원리·아이디어 먼저 (N)", score:{N:1}}},
-    {id:7,text:"친구가 고민 상담하면 당신은?", a:{text:"직설적으로 핵심 지적 (T)", score:{T:1}}, b:{text:"공감하고 감정 먼저 안정 (F)", score:{F:1}}},
-    {id:8,text:"일할 때 당신의 스타일은?", a:{text:"마감·목표 맞춰 체계적으로 (J)", score:{J:1}}, b:{text:"상황에 따라 유연하게 변경 (P)", score:{P:1}}}
+    {id:1,text:"파티에 가면 주로 무엇을 하나요?",a:{text:"사람들과 어울려 먼저 말 거는 편 (E)",score:{E:1}},b:{text:"조용히 관찰하거나 친한 사람만 만나는 편 (I)",score:{I:1}}},
+    {id:2,text:"결정할 때 무엇에 더 의지하나요?",a:{text:"현실적 사실과 경험 (S)",score:{S:1}},b:{text:"직관과 가능성 (N)",score:{N:1}}},
+    {id:3,text:"갈등 상황에서 나는?",a:{text:"논리(원인·해결) 중심으로 접근 (T)",score:{T:1}},b:{text:"감정과 관계를 고려해 결론 (F)",score:{F:1}}},
+    {id:4,text:"계획 세울 때 나는?",a:{text:"미리 계획해 두는 편 (J)",score:{J:1}},b:{text:"즉흥적으로 유연하게 가는 편 (P)",score:{P:1}}},
+    {id:5,text:"휴일에 당신이라면?",a:{text:"여럿이랑 활동적으로 보내기 (E)",score:{E:1}},b:{text:"집에서 혼자/적은 사람과 쉬기 (I)",score:{I:1}}},
+    {id:6,text:"새로운 것 배울 때 선호는?",a:{text:"검증된 방법과 실습 (S)",score:{S:1}},b:{text:"이론·원리·아이디어 먼저 (N)",score:{N:1}}},
+    {id:7,text:"친구가 고민 상담하면 당신은?",a:{text:"직설적으로 핵심 지적 (T)",score:{T:1}},b:{text:"공감하고 감정 먼저 안정 (F)",score:{F:1}}},
+    {id:8,text:"일할 때 당신의 스타일은?",a:{text:"마감·목표 맞춰 체계적으로 (J)",score:{J:1}},b:{text:"상황에 따라 유연하게 변경 (P)",score:{P:1}}}
   ],
   mbti_to_dog: {
-    "ISTJ": {"breed":"German Shepherd","dog_personality":"책임감 있고 신중하며 주인에게 충성심이 강함. 규칙과 일관성을 좋아함.","mbti_desc":"ISTJ: 현실적이고 실용적인 관리자형. 전통을 중시하고 맡은 바를 끝까지 해냄."},
-    "ISFJ": {"breed":"Golden Retriever","dog_personality":"온화하고 사람을 잘 따르며 배려심이 강함. 가족 지향적.","mbti_desc":"ISFJ: 온화한 수호자형. 타인을 돌보고 안정감을 제공하는 것을 즐김."},
-    "INFJ": {"breed":"Cavalier King Charles Spaniel","dog_personality":"섬세하고 온순하며 사람 기분을 잘 읽음. 조용한 애교형.","mbti_desc":"INFJ: 이상주의적 조언자. 깊은 통찰과 공감을 바탕으로 움직임."},
-    "INTJ": {"breed":"Shiba Inu","dog_personality":"독립적이고 고집스러우며 스스로 생각하는 타입. 깔끔한 성향.","mbti_desc":"INTJ: 전략가형. 장기적 계획과 구조를 세우는 데 능숙."},
-    "ISTP": {"breed":"Jack Russell Terrier","dog_personality":"모험을 즐기고 손재주가 좋으며 문제 해결을 잘함. 활동적.","mbti_desc":"ISTP: 장인형 문제 해결자. 현실적이고 즉각적인 대응을 잘함."},
-    "ISFP": {"breed":"Beagle","dog_personality":"감성적이고 호기심 많으며 느긋한 매력. 사람과 잘 어울림.","mbti_desc":"ISFP: 예술가형. 감각적이고 현재를 즐기며 타인의 선택을 존중."},
-    "INFP": {"breed":"Samoyed","dog_personality":"온화하고 이상주의적이며 따뜻한 성격. 애정 표현이 풍부함.","mbti_desc":"INFP: 중재자형. 가치와 이상을 중시하며 내면적 동기가 강함."},
-    "INTP": {"breed":"Basenji","dog_personality":"지적이고 독립적이며 호기심이 많음. 혼자서 탐구하는 걸 좋아함.","mbti_desc":"INTP: 분석가형. 논리와 이론을 통해 문제를 탐구함."},
-    "ESTP": {"breed":"Boxer","dog_personality":"활발하고 직설적이며 모험심 강함. 즉흥적 에너지가 넘침.","mbti_desc":"ESTP: 실행가형. 행동이 빠르고 현장에서 해결책을 찾음."},
-    "ESFP": {"breed":"Labrador Retriever","dog_personality":"사교적이고 즐거움을 추구하며 사람과의 교류를 즐김.","mbti_desc":"ESFP: 연예인형. 순간의 즐거움을 잘 살리고 타인에 밝음."},
-    "ENFP": {"breed":"Poodle","dog_personality":"창의적이고 장난꾸러기 같으며 사람을 잘 끌어당김.","mbti_desc":"ENFP: 재능발견가. 아이디어가 풍부하고 사람을 영감하게 함."},
-    "ENTP": {"breed":"Australian Shepherd","dog_personality":"기민하고 장난기 있으며 새로운 자극에 빠르게 반응함.","mbti_desc":"ENTP: 발명가형. 토론과 창의적 도전을 즐김."},
-    "ESTJ": {"breed":"Rottweiler","dog_personality":"단호하고 조직적이며 책임감이 강함. 보호 본능이 큼.","mbti_desc":"ESTJ: 집행자형. 구조와 규칙을 세워 실행하는 데 뛰어남."},
-    "ESFJ": {"breed":"Corgi","dog_personality":"사교적이고 타인을 챙기며 팀플레이에 강함.","mbti_desc":"ESFJ: 제공자형. 관계를 중시하고 타인을 돕는 데 만족감을 느낌."},
-    "ENFJ": {"breed":"Border Collie","dog_personality":"리더십 있고 주의를 잘 끌며 사람을 이끄는 에너지.","mbti_desc":"ENFJ: 언어로 이끄는 리더. 타인의 잠재력을 끌어내는 데 능함."},
-    "ENTJ": {"breed":"Siberian Husky","dog_personality":"야망 있고 에너지가 넘치며 목표지향적. 때론 도전적.","mbti_desc":"ENTJ: 통솔자형. 비전·전략을 세워 조직을 이끌어감."}
+    "ISTJ":{"breed":"German Shepherd","dog_personality":"책임감 있고 신중하며 충성심 강함.","mbti_desc":"ISTJ: 현실적이고 실용적인 관리자형."},
+    "ISFJ":{"breed":"Golden Retriever","dog_personality":"온화하고 가족 지향적.","mbti_desc":"ISFJ: 온화한 수호자형."},
+    "INFJ":{"breed":"Cavalier King Charles Spaniel","dog_personality":"섬세하고 온순, 조용한 애교형.","mbti_desc":"INFJ: 이상주의적 조언자."},
+    "INTJ":{"breed":"Shiba Inu","dog_personality":"독립적이고 고집스러움.","mbti_desc":"INTJ: 전략가형."},
+    "ISTP":{"breed":"Jack Russell Terrier","dog_personality":"모험적이고 활동적.","mbti_desc":"ISTP: 장인형 문제 해결자."},
+    "ISFP":{"breed":"Beagle","dog_personality":"감성적이고 호기심 많음.","mbti_desc":"ISFP: 예술가형."},
+    "INFP":{"breed":"Samoyed","dog_personality":"온화하고 따뜻함.","mbti_desc":"INFP: 중재자형."},
+    "INTP":{"breed":"Basenji","dog_personality":"지적이고 탐구심 강함.","mbti_desc":"INTP: 분석가형."},
+    "ESTP":{"breed":"Boxer","dog_personality":"활발하고 즉흥적.","mbti_desc":"ESTP: 실행가형."},
+    "ESFP":{"breed":"Labrador Retriever","dog_personality":"사교적이고 즐거움을 추구.","mbti_desc":"ESFP: 연예인형."},
+    "ENFP":{"breed":"Poodle","dog_personality":"창의적이고 장난꾸러기.","mbti_desc":"ENFP: 재능발견가."},
+    "ENTP":{"breed":"Australian Shepherd","dog_personality":"기민하고 장난기 많음.","mbti_desc":"ENTP: 발명가형."},
+    "ESTJ":{"breed":"Rottweiler","dog_personality":"책임감 강하고 보호 본능.","mbti_desc":"ESTJ: 집행자형."},
+    "ESFJ":{"breed":"Corgi","dog_personality":"사교적이고 타인을 챙김.","mbti_desc":"ESFJ: 제공자형."},
+    "ENFJ":{"breed":"Border Collie","dog_personality":"리더십 있고 활발.","mbti_desc":"ENFJ: 언어로 이끄는 리더."},
+    "ENTJ":{"breed":"Siberian Husky","dog_personality":"에너지 넘치고 도전적.","mbti_desc":"ENTJ: 통솔자형."}
   },
   result_template: {
-    title: "당신의 MBTI: {mbti} — 어울리는 강아지: {breed}",
-    body: "{mbti_desc}\n\n강아지 성격: {dog_personality}\n\n해석: {interpretation}"
+    title:"당신의 MBTI: {mbti} — 어울리는 강아지: {breed}",
+    body:"{mbti_desc}\n\n강아지 성격: {dog_personality}\n\n해석: {interpretation}"
   }
 };
 
-/* --- UI 렌더링 --- */
-const quizEl = document.getElementById('quiz');
-const submitBtn = document.getElementById('submit');
-const resetBtn = document.getElementById('reset');
-const resultBlock = document.getElementById('result');
-const resultTitle = document.getElementById('result-title');
-const resultBody = document.getElementById('result-body');
-const downloadBtn = document.getElementById('download');
-const copyTextBtn = document.getElementById('copyText');
-const canvas = document.getElementById('cardCanvas');
-const ctx = canvas.getContext('2d');
+/* 견종별 샘플 이미지 URL */
+const DOG_IMAGES = {
+  "German Shepherd":"https://place-puppy.com/400x200?image=1",
+  "Golden Retriever":"https://place-puppy.com/400x200?image=2",
+  "Cavalier King Charles Spaniel":"https://place-puppy.com/400x200?image=3",
+  "Shiba Inu":"https://place-puppy.com/400x200?image=4",
+  "Jack Russell Terrier":"https://place-puppy.com/400x200?image=5",
+  "Beagle":"https://place-puppy.com/400x200?image=6",
+  "Samoyed":"https://place-puppy.com/400x200?image=7",
+  "Basenji":"https://place-puppy.com/400x200?image=8",
+  "Boxer":"https://place-puppy.com/400x200?image=9",
+  "Labrador Retriever":"https://place-puppy.com/400x200?image=10",
+  "Poodle":"https://place-puppy.com/400x200?image=11",
+  "Australian Shepherd":"https://place-puppy.com/400x200?image=12",
+  "Rottweiler":"https://place-puppy.com/400x200?image=13",
+  "Corgi":"https://place-puppy.com/400x200?image=14",
+  "Border Collie":"https://place-puppy.com/400x200?image=15",
+  "Siberian Husky":"https://place-puppy.com/400x200?image=16"
+};
 
-let answers = {}; // id -> 'a' or 'b'
+/* --- DOM --- */
+const quizEl=document.getElementById('quiz');
+const submitBtn=document.getElementById('submit');
+const resetBtn=document.getElementById('reset');
+const resultBlock=document.getElementById('result');
+const resultTitle=document.getElementById('result-title');
+const resultBody=document.getElementById('result-body');
+const shareKakaoBtn=document.getElementById('shareKakao');
+const copyTextBtn=document.getElementById('copyText');
+const canvas=document.getElementById('cardCanvas');
+const ctx=canvas.getContext('2d');
+let answers={};
 
+/* --- UI --- */
 function renderQuiz(){
-  quizEl.innerHTML = '';
+  quizEl.innerHTML='';
   DATA.questions.forEach(q=>{
-    const qdiv = document.createElement('div');
-    qdiv.className = 'q';
-    qdiv.innerHTML = `<h3>${q.id}. ${q.text}</h3>`;
-    const btnRow = document.createElement('div'); btnRow.className='btn-row';
-    const aBtn = document.createElement('button'); aBtn.className='btn'; aBtn.textContent = 'A. '+q.a.text;
-    const bBtn = document.createElement('button'); bBtn.className='btn'; bBtn.textContent = 'B. '+q.b.text;
-    aBtn.onclick = ()=>{ answers[q.id]='a'; markSelected(q.id); };
-    bBtn.onclick = ()=>{ answers[q.id]='b'; markSelected(q.id); };
-    btnRow.appendChild(aBtn); btnRow.appendChild(bBtn);
-    qdiv.appendChild(btnRow);
+    const qdiv=document.createElement('div');qdiv.className='q';
+    qdiv.innerHTML=`<h3>${q.id}. ${q.text}</h3>`;
+    const row=document.createElement('div');row.className='btn-row';
+    const aBtn=document.createElement('button');aBtn.className='btn';aBtn.textContent='A. '+q.a.text;
+    const bBtn=document.createElement('button');bBtn.className='btn';bBtn.textContent='B. '+q.b.text;
+    aBtn.onclick=()=>{answers[q.id]='a';markSelected(q.id);};
+    bBtn.onclick=()=>{answers[q.id]='b';markSelected(q.id);};
+    row.appendChild(aBtn);row.appendChild(bBtn);qdiv.appendChild(row);
     quizEl.appendChild(qdiv);
   });
 }
-
 function markSelected(qid){
-  const qdiv = quizEl.querySelectorAll('.q')[qid-1];
-  const buttons = qdiv.querySelectorAll('.btn');
-  buttons.forEach(b=>b.style.borderColor='#ddd');
-  const choice = answers[qid];
-  if(choice==='a') buttons[0].style.borderColor='#3b82f6';
-  if(choice==='b') buttons[1].style.borderColor='#3b82f6';
+  const qdiv=quizEl.querySelectorAll('.q')[qid-1];
+  const btns=qdiv.querySelectorAll('.btn');
+  btns.forEach(b=>b.style.borderColor='#ddd');
+  const c=answers[qid];
+  if(c==='a')btns[0].style.borderColor='#3b82f6';
+  if(c==='b')btns[1].style.borderColor='#3b82f6';
 }
-
 function calcMBTI(){
-  // 집계: E vs I, S vs N, T vs F, J vs P
-  const score = {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
+  const s={E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
   for(const q of DATA.questions){
-    const pick = answers[q.id];
-    if(!pick) continue;
-    const sc = (pick==='a')? q.a.score : q.b.score;
-    for(const k in sc) score[k] += sc[k];
+    const pick=answers[q.id];if(!pick)continue;
+    const sc=(pick==='a')?q.a.score:q.b.score;
+    for(const k in sc)s[k]+=sc[k];
   }
-  const letter = (score.E>=score.I ? 'E' : 'I') +
-                 (score.S>=score.N ? 'S' : 'N') +
-                 (score.T>=score.F ? 'T' : 'F') +
-                 (score.J>=score.P ? 'J' : 'P');
-  return {letter,score};
+  const letter=(s.E>=s.I?'E':'I')+(s.S>=s.N?'S':'N')+(s.T>=s.F?'T':'F')+(s.J>=s.P?'J':'P');
+  return{letter,score:s};
 }
-
 function makeInterpretation(mbti){
-  // 간단한 해석 문장(결과 템플릿에 넣을 부분)
-  const base = DATA.mbti_to_dog[mbti];
-  if(!base) return "결과를 해석하는 중 문제가 발생했습니다.";
-  // 맞춤 해석 예시: MBTI 성향과 강아지 성격 연결
-  const interp = `당신은 ${mbti} 성향을 가진 사람으로, ${base.mbti_desc} 이며,\n${base.dog_personality} 특성과 잘 어울립니다. 함께 지내면 서로의 안정과 활력을 주고받을 수 있어요.`;
-  return interp;
+  const base=DATA.mbti_to_dog[mbti];
+  return `당신은 ${mbti} 성향으로, ${base.mbti_desc}\n${base.dog_personality} 특성과 잘 어울립니다.`;
 }
-
 function showResult(){
-  // 유효성 검사: 모든 질문 응답했는지 체크
-  if(Object.keys(answers).length < DATA.questions.length){
-    alert('모든 질문에 답해주세요!');
-    return;
+  if(Object.keys(answers).length<DATA.questions.length){alert('모든 질문에 답해주세요!');return;}
+  const {letter}=calcMBTI();
+  const info=DATA.mbti_to_dog[letter];
+  const interp=makeInterpretation(letter);
+  const title=DATA.result_template.title.replace('{mbti}',letter).replace('{breed}',info.breed);
+  const body=DATA.result_template.body.replace('{mbti_desc}',info.mbti_desc).replace('{dog_personality}',info.dog_personality).replace('{interpretation}',interp);
+  resultTitle.textContent=title;resultBody.textContent=body;resultBlock.style.display='block';
+  quizEl.style.display='none';submitBtn.style.display='none';
+  drawCard(letter,info,interp);
+  shareKakaoBtn.onclick=()=>{
+    const dogImg=DOG_IMAGES[info.breed]||"https://place-puppy.com/400x200";
+    Kakao.Share.sendDefault({
+      objectType:"feed",
+      content:{
+        title:title,
+        description:body.substring(0,80)+"...",
+        imageUrl:dogImg,
+        link:{mobileWebUrl:window.location.href,webUrl:window.location.href}
+      },
+      buttons:[{title:"나도 테스트 해보기",link:{mobileWebUrl:window.location.origin,webUrl:window.location.origin}}]
+    });
+  };
+}
+function drawCard(mbti,info,interp){
+  const w=canvas.width,h=canvas.height;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#f1f5f9';ctx.fillRect(0,0,320,h);
+  ctx.fillStyle='#222';ctx.font='bold 32px sans-serif';ctx.fillText(info.breed,18,60);
+  ctx.font='24px sans-serif';ctx.fillText('MBTI: '+mbti,18,100);
+  ctx.font='80px serif';ctx.fillText('🐶',110,220);
+  ctx.fillStyle='#111827';ctx.font='20px sans-serif';wrapText(ctx,info.mbti_desc,340,40,460,26);
+  ctx.font='18px sans-serif';wrapText(ctx,'강아지 성격: '+info.dog_personality,340,180,460,22);
+  ctx.font='16px sans-serif';wrapText(ctx,interp,340,260,460,20);
+  canvas.style.display='block';
+}
+function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+  const words=text.split(' ');let line='';
+  for(let n=0;n<words.length;n++){
+    const test=line+words[n]+' ';const w=ctx.measureText(test).width;
+    if(w>maxWidth&&n>0){ctx.fillText(line,x,y);line=words[n]+' ';y+=lineHeight;}
+    else line=test;
   }
-  const {letter} = calcMBTI();
-  const info = DATA.mbti_to_dog[letter];
-  const interpretation = makeInterpretation(letter);
-  const title = DATA.result_template.title.replace('{mbti}', letter).replace('{breed}', info.breed);
-  const body = DATA.result_template.body
-                .replace('{mbti_desc}', info.mbti_desc)
-                .replace('{dog_personality}', info.dog_personality)
-                .replace('{interpretation}', interpretation);
-  resultTitle.textContent = title;
-  resultBody.textContent = body;
-  resultBlock.style.display = 'block';
-  // draw canvas card for download
-  drawCard(letter, info, interpretation);
+  ctx.fillText(line,x,y);
 }
+submitBtn.onclick=showResult;
+resetBtn.onclick=()=>{answers={};renderQuiz();resultBlock.style.display='none';canvas.style.display='none';quizEl.style.display='block';submitBtn.style.display='inline';};
+copyTextBtn.onclick=()=>{const text=resultTitle.textContent+"\n\n"+resultBody.textContent;navigator.clipboard.writeText(text).then(()=>alert('결과가 복사되었습니다.'));};
 
-function drawCard(mbti, info, interpretation){
-  // canvas 초기화
-  const w = canvas.width, h = canvas.height;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0,0,w,h);
-  // left area: big emoji/dog placeholder
-  ctx.fillStyle = '#f1f5f9';
-  ctx.fillRect(0,0,320,h);
-  ctx.fillStyle = '#222';
-  ctx.font = 'bold 36px sans-serif';
-  ctx.fillText(info.breed, 18, 60);
-  ctx.font = '24px sans-serif';
-  ctx.fillText('MBTI: '+mbti, 18, 100);
-  // dog emoji simple representation
-  ctx.font = '80px serif';
-  ctx.fillText('🐶', 110, 220);
-  // right area: text
-  ctx.fillStyle = '#111827';
-  ctx.font = '20px sans-serif';
-  wrapText(ctx, info.mbti_desc, 340, 40, 460, 26);
-  ctx.font = '18px sans-serif';
-  wrapText(ctx, '강아지 성격: ' + info.dog_personality, 340, 180, 460, 22);
-  ctx.font = '16px sans-serif';
-  wrapText(ctx, interpretation, 340, 260, 460, 20);
-  canvas.style.display = 'block';
-}
-
-function wrapText(context, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '';
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + ' ';
-    const metrics = context.measureText(testLine);
-    const testWidth = metrics.width;
-    if (testWidth > maxWidth && n > 0) {
-      context.fillText(line, x, y);
-      line = words[n] + ' ';
-      y += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  context.fillText(line, x, y);
-}
-
-submitBtn.addEventListener('click', showResult);
-resetBtn.addEventListener('click', ()=>{
-  answers = {};
-  renderQuiz();
-  resultBlock.style.display='none';
-  canvas.style.display='none';
-});
-
-downloadBtn.addEventListener('click', ()=>{
-  const link = document.createElement('a');
-  link.download = 'mbti_dog_card.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-});
-
-copyTextBtn.addEventListener('click', ()=>{
-  const text = resultTitle.textContent + "\\n\\n" + resultBody.textContent;
-  navigator.clipboard.writeText(text).then(()=>alert('결과가 복사되었습니다.'), ()=>alert('복사 실패'));
-});
-
-/* 처음 렌더 */
+/* 초기 실행 */
 renderQuiz();
 </script>
 </body>
